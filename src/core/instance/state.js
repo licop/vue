@@ -316,10 +316,13 @@ function createWatcher (
   return vm.$watch(expOrFn, handler, options)
 }
 
+// 注册vm的$data/$props/$set/$delete/$watch
 export function stateMixin (Vue: Class<Component>) {
   // flow somehow has problems with directly declared definition object
   // when using Object.defineProperty, so we have to procedurally build up
   // the object here.
+  
+  // 手动改变data和props发出警告
   const dataDef = {}
   dataDef.get = function () { return this._data }
   const propsDef = {}
@@ -338,7 +341,7 @@ export function stateMixin (Vue: Class<Component>) {
   }
   Object.defineProperty(Vue.prototype, '$data', dataDef)
   Object.defineProperty(Vue.prototype, '$props', propsDef)
-
+  // 辅助$set和$delete方法和Vue.set()和Vue.$delete()一致
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
 
@@ -347,20 +350,26 @@ export function stateMixin (Vue: Class<Component>) {
     cb: any,
     options?: Object
   ): Function {
+    // 获取Vue实例this
     const vm: Component = this
     if (isPlainObject(cb)) {
+      // 判断如果 cb 是对象执行 createWatcher
       return createWatcher(vm, expOrFn, cb, options)
     }
     options = options || {}
+    // 标记为用户 watcher
     options.user = true
     const watcher = new Watcher(vm, expOrFn, cb, options)
+    // 判断 immediate 如果为 true
     if (options.immediate) {
+      // 立即执行一次 cb 回调，并且把当前值传入
       try {
         cb.call(vm, watcher.value)
       } catch (error) {
         handleError(error, vm, `callback for immediate watcher "${watcher.expression}"`)
       }
     }
+    // 返回取消监听的方法
     return function unwatchFn () {
       watcher.teardown()
     }

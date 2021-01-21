@@ -13,8 +13,10 @@ export function initEvents (vm: Component) {
   vm._events = Object.create(null)
   vm._hasHookEvent = false
   // init parent attached events
+  // 获取父元素上的附加事件
   const listeners = vm.$options._parentListeners
   if (listeners) {
+    // 注册自定义事件
     updateComponentListeners(vm, listeners)
   }
 }
@@ -48,7 +50,7 @@ export function updateComponentListeners (
   updateListeners(listeners, oldListeners || {}, add, remove, createOnceHandler, vm)
   target = undefined
 }
-
+// 发布订阅模式
 export function eventsMixin (Vue: Class<Component>) {
   const hookRE = /^hook:/
   Vue.prototype.$on = function (event: string | Array<string>, fn: Function): Component {
@@ -67,7 +69,7 @@ export function eventsMixin (Vue: Class<Component>) {
     }
     return vm
   }
-
+  // 监听一个自定义事件，但是只触发一次。一旦触发之后，监听器就会被移除。
   Vue.prototype.$once = function (event: string, fn: Function): Component {
     const vm: Component = this
     function on () {
@@ -79,6 +81,9 @@ export function eventsMixin (Vue: Class<Component>) {
     return vm
   }
 
+  // 如果没有提供参数，则移除所有的事件监听器；
+  // 如果只提供了事件，则移除该事件所有的监听器；
+  // 如果同时提供了事件与回调，则只移除这个回调的监听器。
   Vue.prototype.$off = function (event?: string | Array<string>, fn?: Function): Component {
     const vm: Component = this
     // all
