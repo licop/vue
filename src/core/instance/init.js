@@ -20,7 +20,7 @@ export function initMixin (Vue: Class<Component>) {
     const vm: Component = this
     // a uid
     vm._uid = uid++
-
+    // 开发环境下的性能检测
     let startTag, endTag
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
@@ -30,8 +30,10 @@ export function initMixin (Vue: Class<Component>) {
     }
 
     // a flag to avoid this being observed
+    // 如果是Vue实例不需要被observe
     vm._isVue = true
     // merge options
+    // 合并options 用户传入的options和构造函数中的options
     if (options && options._isComponent) {
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
@@ -45,6 +47,7 @@ export function initMixin (Vue: Class<Component>) {
       )
     }
     /* istanbul ignore else */
+    // 设置渲染时候的代理对象
     if (process.env.NODE_ENV !== 'production') {
       initProxy(vm)
     } else {
@@ -52,13 +55,27 @@ export function initMixin (Vue: Class<Component>) {
     }
     // expose real self
     vm._self = vm
+    // vm的声明周期相关变量的初始化
+    // $children/$parent/$root/$refs
     initLifecycle(vm)
+    // vm的事件监听初始化，父组件绑定的事件在当前组件上
     initEvents(vm)
+    // vm render() 方法的初始化
+    // $slots/$scopedSlots/_c/$createElement/$attrs/$listeners
     initRender(vm)
+    // beforeCreate 生命钩子的回调
+    // 在实例初始化之后，数据观测 (data observer) 和 event/watcher 事件配置之前被调用。
     callHook(vm, 'beforeCreate')
+    // 把 inject 的成员注入到 vm 上
     initInjections(vm) // resolve injections before data/props
+    // 初始化 vm 的 _props/methods/_data/computed/watch
     initState(vm)
+    // 初始化 provide
     initProvide(vm) // resolve provide after data/props
+    // created 生命钩子的回调
+    // 在实例创建完成后被立即调用。在这一步，实例已完成以下的配置：
+    // 数据观测 (data observer)，property 和方法的运算，watch/event 事件回调。
+    // 然而，挂载阶段还没开始，$el property 目前尚不可用。
     callHook(vm, 'created')
 
     /* istanbul ignore if */
@@ -67,7 +84,7 @@ export function initMixin (Vue: Class<Component>) {
       mark(endTag)
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
-
+    // 调用$mount()挂载
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }

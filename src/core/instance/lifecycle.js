@@ -33,6 +33,7 @@ export function initLifecycle (vm: Component) {
   const options = vm.$options
 
   // locate first non-abstract parent
+  // 找到当前vue实例也就是组件的父组件，把vm添加在父组件的$children里
   let parent = options.parent
   if (parent && !options.abstract) {
     while (parent.$options.abstract && parent.$parent) {
@@ -46,7 +47,7 @@ export function initLifecycle (vm: Component) {
 
   vm.$children = []
   vm.$refs = {}
-
+  // 私有成员
   vm._watcher = null
   vm._inactive = null
   vm._directInactive = false
@@ -152,6 +153,7 @@ export function mountComponent (
     vm.$options.render = createEmptyVNode
     if (process.env.NODE_ENV !== 'production') {
       /* istanbul ignore if */
+      // 运行时不带编辑器的版本使用temlpate发出警告
       if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
         vm.$options.el || el) {
         warn(
@@ -168,6 +170,7 @@ export function mountComponent (
       }
     }
   }
+  // beforeMount钩子函数
   callHook(vm, 'beforeMount')
 
   let updateComponent
@@ -190,6 +193,7 @@ export function mountComponent (
       measure(`vue ${name} patch`, startTag, endTag)
     }
   } else {
+    // vm._render()为渲染函数，vm._update把虚拟dom转化为真实dom更新到页面上
     updateComponent = () => {
       vm._update(vm._render(), hydrating)
     }
@@ -198,9 +202,11 @@ export function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  // Watcher用于渲染视图，每个组件对应一个Watcher
   new Watcher(vm, updateComponent, noop, {
     before () {
       if (vm._isMounted && !vm._isDestroyed) {
+        // beforeUpdate钩子函数
         callHook(vm, 'beforeUpdate')
       }
     }
@@ -211,6 +217,7 @@ export function mountComponent (
   // mounted is called for render-created child components in its inserted hook
   if (vm.$vnode == null) {
     vm._isMounted = true
+    // mounted钩子函数
     callHook(vm, 'mounted')
   }
   return vm

@@ -2424,7 +2424,7 @@
   }
 
   /*  */
-
+  // 把$options.provide存储到vm._provided
   function initProvide (vm) {
     var provide = vm.$options.provide;
     if (provide) {
@@ -2435,6 +2435,7 @@
   }
 
   function initInjections (vm) {
+    // vm.__provided, 如果父组件的provide提供了数据 提取inject的数据注册成响应式
     var result = resolveInject(vm.$options.inject, vm);
     if (result) {
       toggleObserving(false);
@@ -2471,6 +2472,7 @@
         var source = vm;
         while (source) {
           if (source._provided && hasOwn(source._provided, provideKey)) {
+            // 核心代码，找到_provided中对应的属性值
             result[key] = source._provided[provideKey];
             break
           }
@@ -3493,9 +3495,12 @@
     // so that we get proper render context inside it.
     // args order: tag, data, children, normalizationType, alwaysNormalize
     // internal version is used by render functions compiled from templates
+    
+    // 对模板编译生成的render进行渲染 createElement => h()函数
     vm._c = function (a, b, c, d) { return createElement(vm, a, b, c, d, false); };
     // normalization is always applied for the public version, used in
     // user-written render functions.
+    // 对手写render函数进行渲染的方法 createElement => h()函数
     vm.$createElement = function (a, b, c, d) { return createElement(vm, a, b, c, d, true); };
 
     // $attrs & $listeners are exposed for easier HOC creation.
@@ -3768,7 +3773,7 @@
     // 获取父元素上的附加事件
     var listeners = vm.$options._parentListeners;
     if (listeners) {
-      // 注册自定义事件
+      // 把父组件附加的事件注册到当前组件上
       updateComponentListeners(vm, listeners);
     }
   }
@@ -3916,6 +3921,7 @@
     var options = vm.$options;
 
     // locate first non-abstract parent
+    // 找到当前vue实例也就是组件的父组件，把vm添加在父组件的$children里
     var parent = options.parent;
     if (parent && !options.abstract) {
       while (parent.$options.abstract && parent.$parent) {
@@ -3929,7 +3935,7 @@
 
     vm.$children = [];
     vm.$refs = {};
-
+    // 私有成员
     vm._watcher = null;
     vm._inactive = null;
     vm._directInactive = false;
@@ -4035,6 +4041,7 @@
       vm.$options.render = createEmptyVNode;
       {
         /* istanbul ignore if */
+        // 运行时不带编辑器的版本使用temlpate发出警告
         if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
           vm.$options.el || el) {
           warn(
@@ -4051,6 +4058,7 @@
         }
       }
     }
+    // beforeMount钩子函数
     callHook(vm, 'beforeMount');
 
     var updateComponent;
@@ -4073,6 +4081,7 @@
         measure(("vue " + name + " patch"), startTag, endTag);
       };
     } else {
+      // vm._render()为渲染函数，vm._update把虚拟dom转化为真实dom更新到页面上
       updateComponent = function () {
         vm._update(vm._render(), hydrating);
       };
@@ -4081,9 +4090,11 @@
     // we set this to vm._watcher inside the watcher's constructor
     // since the watcher's initial patch may call $forceUpdate (e.g. inside child
     // component's mounted hook), which relies on vm._watcher being already defined
+    // Watcher用于渲染视图，每个组件对应一个Watcher
     new Watcher(vm, updateComponent, noop, {
       before: function before () {
         if (vm._isMounted && !vm._isDestroyed) {
+          // beforeUpdate钩子函数
           callHook(vm, 'beforeUpdate');
         }
       }
@@ -4094,6 +4105,7 @@
     // mounted is called for render-created child components in its inserted hook
     if (vm.$vnode == null) {
       vm._isMounted = true;
+      // mounted钩子函数
       callHook(vm, 'mounted');
     }
     return vm
@@ -4486,6 +4498,7 @@
     var value;
     var vm = this.vm;
     try {
+      // 此处用于渲染视图
       value = this.getter.call(vm, vm);
     } catch (e) {
       if (this.user) {
@@ -4646,19 +4659,24 @@
   function initState (vm) {
     vm._watchers = [];
     var opts = vm.$options;
+    // 初始化props， 把选项中props的数据变成响应式注入到vue实例中
     if (opts.props) { initProps(vm, opts.props); }
+    // 初始化methods, 检查命名之后把选项中methods的方法注册到Vue实例
     if (opts.methods) { initMethods(vm, opts.methods); }
+    // 初始化data,把data中的成员注册到vue实例中，并把data对象转换成响应式
     if (opts.data) {
       initData(vm);
     } else {
       observe(vm._data = {}, true /* asRootData */);
     }
+    // 初始化computed
     if (opts.computed) { initComputed(vm, opts.computed); }
+    // 初始化watch
     if (opts.watch && opts.watch !== nativeWatch) {
       initWatch(vm, opts.watch);
     }
   }
-
+  // 初始化prpps
   function initProps (vm, propsOptions) {
     var propsData = vm.$options.propsData || {};
     var props = vm._props = {};
@@ -4683,6 +4701,7 @@
             vm
           );
         }
+        // 把props存储到vm._props
         defineReactive(props, key, value, function () {
           if (!isRoot && !isUpdatingChildComponent) {
             warn(
@@ -4709,6 +4728,8 @@
 
   function initData (vm) {
     var data = vm.$options.data;
+    // 初始化_data,组件中data是函数，调用函数返回结果
+    // 否则直接返回data
     data = vm._data = typeof data === 'function'
       ? getData(data, vm)
       : data || {};
@@ -4725,6 +4746,7 @@
     var props = vm.$options.props;
     var methods = vm.$options.methods;
     var i = keys.length;
+    // 判断data上的成员是否和props和methods重名
     while (i--) {
       var key = keys[i];
       {
@@ -4742,10 +4764,12 @@
           vm
         );
       } else if (!isReserved(key)) {
+        // 把当前的key注册到vue实例当中
         proxy(vm, "_data", key);
       }
     }
     // observe data
+    // 响应式处理
     observe(data, true /* asRootData */);
   }
 
@@ -4868,12 +4892,14 @@
             vm
           );
         }
+        // 如果methods属性在props中存在发出警告，不允许同名
         if (props && hasOwn(props, key)) {
           warn(
             ("Method \"" + key + "\" has already been defined as a prop."),
             vm
           );
         }
+        // 如果key在vm中存在并且以_和$开头，可能会和Vue实例方法发生冲突
         if ((key in vm) && isReserved(key)) {
           warn(
             "Method \"" + key + "\" conflicts with an existing Vue instance method. " +
@@ -4881,6 +4907,7 @@
           );
         }
       }
+      // 如果methods[key]是函数，则把methods内的方法的this绑定到vm
       vm[key] = typeof methods[key] !== 'function' ? noop : bind(methods[key], vm);
     }
   }
@@ -4986,7 +5013,7 @@
       var vm = this;
       // a uid
       vm._uid = uid$2++;
-
+      // 开发环境下的性能检测
       var startTag, endTag;
       /* istanbul ignore if */
       if ( config.performance && mark) {
@@ -4996,8 +5023,10 @@
       }
 
       // a flag to avoid this being observed
+      // 如果是Vue实例不需要被observe
       vm._isVue = true;
       // merge options
+      // 合并options 用户传入的options和构造函数中的options
       if (options && options._isComponent) {
         // optimize internal component instantiation
         // since dynamic options merging is pretty slow, and none of the
@@ -5011,18 +5040,33 @@
         );
       }
       /* istanbul ignore else */
+      // 设置渲染时候的代理对象
       {
         initProxy(vm);
       }
       // expose real self
       vm._self = vm;
+      // vm的声明周期相关变量的初始化
+      // $children/$parent/$root/$refs
       initLifecycle(vm);
+      // vm的事件监听初始化，父组件绑定的事件在当前组件上
       initEvents(vm);
+      // vm render() 方法的初始化
+      // $slots/$scopedSlots/_c/$createElement/$attrs/$listeners
       initRender(vm);
+      // beforeCreate 生命钩子的回调
+      // 在实例初始化之后，数据观测 (data observer) 和 event/watcher 事件配置之前被调用。
       callHook(vm, 'beforeCreate');
+      // 把 inject 的成员注入到 vm 上
       initInjections(vm); // resolve injections before data/props
+      // 初始化 vm 的 _props/methods/_data/computed/watch
       initState(vm);
+      // 初始化 provide
       initProvide(vm); // resolve provide after data/props
+      // created 生命钩子的回调
+      // 在实例创建完成后被立即调用。在这一步，实例已完成以下的配置：
+      // 数据观测 (data observer)，property 和方法的运算，watch/event 事件回调。
+      // 然而，挂载阶段还没开始，$el property 目前尚不可用。
       callHook(vm, 'created');
 
       /* istanbul ignore if */
@@ -5031,7 +5075,7 @@
         mark(endTag);
         measure(("vue " + (vm._name) + " init"), startTag, endTag);
       }
-
+      // 调用$mount()挂载
       if (vm.$options.el) {
         vm.$mount(vm.$options.el);
       }
@@ -11953,9 +11997,10 @@
     return el && el.innerHTML
   });
 
-  // 保留Vue实例中的 $mount 方法
-  var mount = Vue.prototype.$mount;
 
+  // 保留Vue实例中的公共 $mount 方法, 在文件runtime/index.js中定义
+  var mount = Vue.prototype.$mount;
+  // 重写$mount功能，将template编译成render函数
   Vue.prototype.$mount = function (
     el,
     // 非ssr情况下为false，ssr时候为true
@@ -12053,7 +12098,7 @@
       return container.innerHTML
     }
   }
-
+  // 增加compile方法，支持手动把模板变成渲染函数
   Vue.compile = compileToFunctions;
 
   return Vue;

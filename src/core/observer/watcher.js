@@ -103,6 +103,7 @@ export default class Watcher {
     let value
     const vm = this.vm
     try {
+      // 此处用于渲染视图
       value = this.getter.call(vm, vm)
     } catch (e) {
       if (this.user) {

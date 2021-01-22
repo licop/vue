@@ -16,7 +16,7 @@ export function initEvents (vm: Component) {
   // 获取父元素上的附加事件
   const listeners = vm.$options._parentListeners
   if (listeners) {
-    // 注册自定义事件
+    // 把父组件附加的事件注册到当前组件上
     updateComponentListeners(vm, listeners)
   }
 }

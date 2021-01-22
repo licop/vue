@@ -3,7 +3,7 @@
 import { hasOwn } from 'shared/util'
 import { warn, hasSymbol } from '../util/index'
 import { defineReactive, toggleObserving } from '../observer/index'
-
+// 把$options.provide存储到vm._provided
 export function initProvide (vm: Component) {
   const provide = vm.$options.provide
   if (provide) {
@@ -14,6 +14,7 @@ export function initProvide (vm: Component) {
 }
 
 export function initInjections (vm: Component) {
+  // vm.__provided, 如果父组件的provide提供了数据 提取inject的数据注册成响应式
   const result = resolveInject(vm.$options.inject, vm)
   if (result) {
     toggleObserving(false)
@@ -52,6 +53,7 @@ export function resolveInject (inject: any, vm: Component): ?Object {
       let source = vm
       while (source) {
         if (source._provided && hasOwn(source._provided, provideKey)) {
+          // 核心代码，找到_provided中对应的属性值
           result[key] = source._provided[provideKey]
           break
         }

@@ -48,19 +48,24 @@ export function proxy (target: Object, sourceKey: string, key: string) {
 export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
+  // 初始化props， 把选项中props的数据变成响应式注入到vue实例中
   if (opts.props) initProps(vm, opts.props)
+  // 初始化methods, 检查命名之后把选项中methods的方法注册到Vue实例
   if (opts.methods) initMethods(vm, opts.methods)
+  // 初始化data,把data中的成员注册到vue实例中，并把data对象转换成响应式
   if (opts.data) {
     initData(vm)
   } else {
     observe(vm._data = {}, true /* asRootData */)
   }
+  // 初始化computed
   if (opts.computed) initComputed(vm, opts.computed)
+  // 初始化watch
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch)
   }
 }
-
+// 初始化prpps
 function initProps (vm: Component, propsOptions: Object) {
   const propsData = vm.$options.propsData || {}
   const props = vm._props = {}
@@ -85,6 +90,7 @@ function initProps (vm: Component, propsOptions: Object) {
           vm
         )
       }
+      // 把props存储到vm._props
       defineReactive(props, key, value, () => {
         if (!isRoot && !isUpdatingChildComponent) {
           warn(
@@ -111,6 +117,8 @@ function initProps (vm: Component, propsOptions: Object) {
 
 function initData (vm: Component) {
   let data = vm.$options.data
+  // 初始化_data,组件中data是函数，调用函数返回结果
+  // 否则直接返回data
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
@@ -127,6 +135,7 @@ function initData (vm: Component) {
   const props = vm.$options.props
   const methods = vm.$options.methods
   let i = keys.length
+  // 判断data上的成员是否和props和methods重名
   while (i--) {
     const key = keys[i]
     if (process.env.NODE_ENV !== 'production') {
@@ -144,10 +153,12 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 把当前的key注册到vue实例当中
       proxy(vm, `_data`, key)
     }
   }
   // observe data
+  // 响应式处理
   observe(data, true /* asRootData */)
 }
 
@@ -270,12 +281,14 @@ function initMethods (vm: Component, methods: Object) {
           vm
         )
       }
+      // 如果methods属性在props中存在发出警告，不允许同名
       if (props && hasOwn(props, key)) {
         warn(
           `Method "${key}" has already been defined as a prop.`,
           vm
         )
       }
+      // 如果key在vm中存在并且以_和$开头，可能会和Vue实例方法发生冲突
       if ((key in vm) && isReserved(key)) {
         warn(
           `Method "${key}" conflicts with an existing Vue instance method. ` +
@@ -283,6 +296,7 @@ function initMethods (vm: Component, methods: Object) {
         )
       }
     }
+    // 如果methods[key]是函数，则把methods内的方法的this绑定到vm
     vm[key] = typeof methods[key] !== 'function' ? noop : bind(methods[key], vm)
   }
 }

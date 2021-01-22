@@ -15,9 +15,10 @@ const idToTemplate = cached(id => {
   return el && el.innerHTML
 })
 
-// 保留Vue实例中的 $mount 方法
-const mount = Vue.prototype.$mount
 
+// 保留Vue实例中的公共 $mount 方法, 在文件runtime/index.js中定义
+const mount = Vue.prototype.$mount
+// 重写$mount功能，将template编译成render函数
 Vue.prototype.$mount = function (
   el?: string | Element,
   // 非ssr情况下为false，ssr时候为true
@@ -113,7 +114,7 @@ function getOuterHTML (el: Element): string {
     return container.innerHTML
   }
 }
-
+// 增加compile方法，支持手动把模板变成渲染函数
 Vue.compile = compileToFunctions
 
 export default Vue
