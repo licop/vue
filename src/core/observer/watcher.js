@@ -50,9 +50,11 @@ export default class Watcher {
     isRenderWatcher?: boolean
   ) {
     this.vm = vm
+    // 是否是渲染Watcher
     if (isRenderWatcher) {
       vm._watcher = this
     }
+    // 存储所有watcher
     vm._watchers.push(this)
     // options
     if (options) {
@@ -60,12 +62,16 @@ export default class Watcher {
       this.user = !!options.user
       this.lazy = !!options.lazy
       this.sync = !!options.sync
+      // beforeUpdate钩子函数
       this.before = options.before
     } else {
       this.deep = this.user = this.lazy = this.sync = false
     }
+    // 用户watcher传入的回调函数
     this.cb = cb
+    // 用于唯一标识watcher
     this.id = ++uid // uid for batching
+    // 标识是否是活动的watcher
     this.active = true
     this.dirty = this.lazy // for lazy watchers
     this.deps = []
@@ -79,7 +85,10 @@ export default class Watcher {
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn
     } else {
+      // expOrFn是字符串的时候，说明是用户使用侦听器，例如watch: {'person.name': function...}
+      // parsePath('person.name') 为一个高阶函数返回一个函数，获取'person.name'的值
       this.getter = parsePath(expOrFn)
+      // 如果属性名的格式不对，发出警告
       if (!this.getter) {
         this.getter = noop
         process.env.NODE_ENV !== 'production' && warn(
@@ -90,6 +99,7 @@ export default class Watcher {
         )
       }
     }
+    // 渲染watcher会立即执行get() 方法，如果是是计算watcher的this.lazy为true
     this.value = this.lazy
       ? undefined
       : this.get()
@@ -99,11 +109,13 @@ export default class Watcher {
    * Evaluate the getter, and re-collect dependencies.
    */
   get () {
+    // 将Watcher实例存入targetStack, 并赋值给Dep.target
     pushTarget(this)
     let value
     const vm = this.vm
     try {
-      // 此处用于渲染视图
+      // 此处用于如果是渲染watcher调用updateComponent渲染视图
+      // 如果是用户watcher的话执行回调函数
       value = this.getter.call(vm, vm)
     } catch (e) {
       if (this.user) {
@@ -114,10 +126,13 @@ export default class Watcher {
     } finally {
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
+      // 深度监听，如果是对象的话，会监视所有子属性
       if (this.deep) {
         traverse(value)
       }
+      // 把当前的target从站中弹出
       popTarget()
+      // 把当前watcher从dep的sub数组中移除，并且把watcher中记录的dep也移除
       this.cleanupDeps()
     }
     return value
@@ -169,6 +184,8 @@ export default class Watcher {
     } else if (this.sync) {
       this.run()
     } else {
+      // 渲染watcher直接执行queueWatcher
+      // 把当前watcher放进一个队列
       queueWatcher(this)
     }
   }
@@ -179,7 +196,9 @@ export default class Watcher {
    */
   run () {
     if (this.active) {
+      // 调用get方法，渲染watcher value为undefiend
       const value = this.get()
+      // 用户watcher继续往后执行
       if (
         value !== this.value ||
         // Deep watchers and watchers on Object/Arrays should fire even
@@ -191,8 +210,10 @@ export default class Watcher {
         // set new value
         const oldValue = this.value
         this.value = value
+        // 用户watcher异常处理
         if (this.user) {
           try {
+            // 调用回调函数
             this.cb.call(this.vm, value, oldValue)
           } catch (e) {
             handleError(e, this.vm, `callback for watcher "${this.expression}"`)

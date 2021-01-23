@@ -34,7 +34,7 @@ const sharedPropertyDefinition = {
   get: noop,
   set: noop
 }
-
+// 将选项中的data绑定到vue实例
 export function proxy (target: Object, sourceKey: string, key: string) {
   sharedPropertyDefinition.get = function proxyGetter () {
     return this[sourceKey][key]
@@ -56,6 +56,7 @@ export function initState (vm: Component) {
   if (opts.data) {
     initData(vm)
   } else {
+    // 如果没有传入data，传入一个空对象变成响应式的
     observe(vm._data = {}, true /* asRootData */)
   }
   // 初始化computed
@@ -158,7 +159,7 @@ function initData (vm: Component) {
     }
   }
   // observe data
-  // 响应式处理
+  // 将data变成响应式数据， 响应式处理入口， 第二个参数是否为根数据
   observe(data, true /* asRootData */)
 }
 
@@ -353,6 +354,8 @@ export function stateMixin (Vue: Class<Component>) {
       warn(`$props is readonly.`, this)
     }
   }
+  // 将$data, $props变成响应式的分别赋值 _data, _props挂载在Vue实例上
+  // _data, _props在 _init() => initState()通过选项data，props赋值
   Object.defineProperty(Vue.prototype, '$data', dataDef)
   Object.defineProperty(Vue.prototype, '$props', propsDef)
   // 辅助$set和$delete方法和Vue.set()和Vue.$delete()一致
