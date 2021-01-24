@@ -305,6 +305,7 @@ function initMethods (vm: Component, methods: Object) {
 function initWatch (vm: Component, watch: Object) {
   for (const key in watch) {
     const handler = watch[key]
+    // handler可以是数组，遍历
     if (Array.isArray(handler)) {
       for (let i = 0; i < handler.length; i++) {
         createWatcher(vm, key, handler[i])
@@ -321,10 +322,12 @@ function createWatcher (
   handler: any,
   options?: Object
 ) {
+  // 如果是对象
   if (isPlainObject(handler)) {
     options = handler
     handler = handler.handler
   }
+  // 如果是字符串
   if (typeof handler === 'string') {
     handler = vm[handler]
   }
@@ -361,6 +364,7 @@ export function stateMixin (Vue: Class<Component>) {
   // 辅助$set和$delete方法和Vue.set()和Vue.$delete()一致
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
+  
 
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
@@ -376,6 +380,7 @@ export function stateMixin (Vue: Class<Component>) {
     options = options || {}
     // 标记为用户 watcher
     options.user = true
+    // 创建用户watcher对象
     const watcher = new Watcher(vm, expOrFn, cb, options)
     // 判断 immediate 如果为 true
     if (options.immediate) {

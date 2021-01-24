@@ -1,13 +1,20 @@
 /* @flow */
 /* globals MutationObserver */
 
+/**
+ *  延迟一个任务使其异步执行，在下一个tick时执行，一个立即执行函数，返回一个function
+ *  这个函数的作用是在task或者microtask中推入一个timerFunc，在当前调用栈执行完以后以此执行直到执行到timerFunc
+ *  目的是延迟到当前调用栈执行完以后执行
+ */
+
 import { noop } from 'shared/util'
 import { handleError } from './error'
 import { isIE, isIOS, isNative } from './env'
 
 export let isUsingMicroTask = false
-
+// 存放异步执行的回调
 const callbacks = []
+// 一个标记位，如果已经有timerFunc被推送到任务队列中去则不需要重复推送
 let pending = false
 
 function flushCallbacks () {
@@ -30,6 +37,8 @@ function flushCallbacks () {
 // where microtasks have too high a priority and fire in between supposedly
 // sequential events (e.g. #4521, #6690, which have workarounds)
 // or even between bubbling of the same event (#6566).
+
+// 一个函数指针，指向函数将被推送到任务队列中，等到主线程任务执行完时，任务队列中的timerFunc被调用
 let timerFunc
 
 // The nextTick behavior leverages the microtask queue, which can be accessed
@@ -38,9 +47,16 @@ let timerFunc
 // UIWebView in iOS >= 9.3.3 when triggered in touch event handlers. It
 // completely stops working after triggering a few times... so, if native
 // Promise is available, we will use it:
+
+/** 
+  一共有Promise、MutationObserver以及setTimeout三种尝试得到timerFunc的方法
+  优先使用Promise，在Promise不存在的情况下使用MutationObserver，这两个方法都会在microtask中执行，会比setTimeout更早执行，所以优先使用。
+  如果上述两种方法都不支持的环境则会使用setImmediate和setTimeout，setImmediate会比setTimeout更快一点，在task尾部推入这个函数，等待调用执行。
+*/
 /* istanbul ignore next, $flow-disable-line */
 if (typeof Promise !== 'undefined' && isNative(Promise)) {
   const p = Promise.resolve()
+  // 
   timerFunc = () => {
     p.then(flushCallbacks)
     // In problematic UIWebViews, Promise.then doesn't completely break, but
@@ -86,9 +102,11 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
 
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
+  // 把cb加上异常处理存入callbacks数组
   callbacks.push(() => {
     if (cb) {
       try {
+        // 调用cb()
         cb.call(ctx)
       } catch (e) {
         handleError(e, ctx, 'nextTick')
@@ -99,6 +117,7 @@ export function nextTick (cb?: Function, ctx?: Object) {
   })
   if (!pending) {
     pending = true
+    // 调用异步方法
     timerFunc()
   }
   // $flow-disable-line

@@ -174,10 +174,12 @@ function callActivatedHooks (queue) {
 export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
   // has为一个对象，用来标记当前watcher是否被处理过
+  // 如果同一个 watcher 被多次触发，只会被推入到队列中一次。
   if (has[id] == null) {
     has[id] = true
     // flushing 为true说明当前queue正在被处理
     // flushing 为false把当前watcher放到queue末尾
+    // 这种在缓冲时去除重复数据对于避免不必要的计算和 DOM 操作是非常重要的
     if (!flushing) {
       queue.push(watcher)
     } else {
@@ -196,13 +198,13 @@ export function queueWatcher (watcher: Watcher) {
     // 当前队列是否被执行
     if (!waiting) {
       waiting = true
-      // 开发环境直接调用flushSchedulerQueue()
+      // 开发环境通过配置async 可以直接调用flushSchedulerQueue()，同步更新视图
       if (process.env.NODE_ENV !== 'production' && !config.async) {
         // 遍历所有watcher执行run方法
         flushSchedulerQueue()
         return
       }
-      // 生产环境
+      // 在下一个的事件循环“tick”中，Vue 刷新队列并执行实际 (已去重的) 工作, 异步更新视图
       nextTick(flushSchedulerQueue)
     }
   }

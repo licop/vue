@@ -1999,8 +1999,9 @@
   /*  */
 
   var isUsingMicroTask = false;
-
+  // 存放异步执行的回调
   var callbacks = [];
+  // 一个标记位，如果已经有timerFunc被推送到任务队列中去则不需要重复推送
   var pending = false;
 
   function flushCallbacks () {
@@ -2023,6 +2024,8 @@
   // where microtasks have too high a priority and fire in between supposedly
   // sequential events (e.g. #4521, #6690, which have workarounds)
   // or even between bubbling of the same event (#6566).
+
+  // 一个函数指针，指向函数将被推送到任务队列中，等到主线程任务执行完时，任务队列中的timerFunc被调用
   var timerFunc;
 
   // The nextTick behavior leverages the microtask queue, which can be accessed
@@ -2031,9 +2034,16 @@
   // UIWebView in iOS >= 9.3.3 when triggered in touch event handlers. It
   // completely stops working after triggering a few times... so, if native
   // Promise is available, we will use it:
+
+  /** 
+    一共有Promise、MutationObserver以及setTimeout三种尝试得到timerFunc的方法
+    优先使用Promise，在Promise不存在的情况下使用MutationObserver，这两个方法都会在microtask中执行，会比setTimeout更早执行，所以优先使用。
+    如果上述两种方法都不支持的环境则会使用setImmediate和setTimeout，setImmediate会比setTimeout更快一点，在task尾部推入这个函数，等待调用执行。
+  */
   /* istanbul ignore next, $flow-disable-line */
   if (typeof Promise !== 'undefined' && isNative(Promise)) {
     var p = Promise.resolve();
+    // 
     timerFunc = function () {
       p.then(flushCallbacks);
       // In problematic UIWebViews, Promise.then doesn't completely break, but
@@ -2079,9 +2089,11 @@
 
   function nextTick (cb, ctx) {
     var _resolve;
+    // 把cb加上异常处理存入callbacks数组
     callbacks.push(function () {
       if (cb) {
         try {
+          // 调用cb()
           cb.call(ctx);
         } catch (e) {
           handleError(e, ctx, 'nextTick');
@@ -2092,6 +2104,7 @@
     });
     if (!pending) {
       pending = true;
+      // 调用异步方法
       timerFunc();
     }
     // $flow-disable-line
@@ -4504,10 +4517,12 @@
   function queueWatcher (watcher) {
     var id = watcher.id;
     // has为一个对象，用来标记当前watcher是否被处理过
+    // 如果同一个 watcher 被多次触发，只会被推入到队列中一次。
     if (has[id] == null) {
       has[id] = true;
       // flushing 为true说明当前queue正在被处理
       // flushing 为false把当前watcher放到queue末尾
+      // 这种在缓冲时去除重复数据对于避免不必要的计算和 DOM 操作是非常重要的
       if (!flushing) {
         queue.push(watcher);
       } else {
@@ -4526,13 +4541,13 @@
       // 当前队列是否被执行
       if (!waiting) {
         waiting = true;
-        // 开发环境直接调用flushSchedulerQueue()
+        // 开发环境通过配置async 可以直接调用flushSchedulerQueue()，同步更新视图
         if ( !config.async) {
           // 遍历所有watcher执行run方法
           flushSchedulerQueue();
           return
         }
-        // 生产环境
+        // 在下一个的事件循环“tick”中，Vue 刷新队列并执行实际 (已去重的) 工作, 异步更新视图
         nextTick(flushSchedulerQueue);
       }
     }
@@ -5048,6 +5063,7 @@
   function initWatch (vm, watch) {
     for (var key in watch) {
       var handler = watch[key];
+      // handler可以是数组，遍历
       if (Array.isArray(handler)) {
         for (var i = 0; i < handler.length; i++) {
           createWatcher(vm, key, handler[i]);
@@ -5064,10 +5080,12 @@
     handler,
     options
   ) {
+    // 如果是对象
     if (isPlainObject(handler)) {
       options = handler;
       handler = handler.handler;
     }
+    // 如果是字符串
     if (typeof handler === 'string') {
       handler = vm[handler];
     }
@@ -5104,6 +5122,7 @@
     // 辅助$set和$delete方法和Vue.set()和Vue.$delete()一致
     Vue.prototype.$set = set;
     Vue.prototype.$delete = del;
+    
 
     Vue.prototype.$watch = function (
       expOrFn,
@@ -5119,6 +5138,7 @@
       options = options || {};
       // 标记为用户 watcher
       options.user = true;
+      // 创建用户watcher对象
       var watcher = new Watcher(vm, expOrFn, cb, options);
       // 判断 immediate 如果为 true
       if (options.immediate) {
