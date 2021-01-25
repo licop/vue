@@ -33,9 +33,9 @@ export function initRender (vm: Component) {
   vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
   // normalization is always applied for the public version, used in
   // user-written render functions.
-  // 对手写render函数进行渲染的方法 createElement => h()函数
+  // 对用户手写render函数进行渲染的方法 createElement => h()函数
   vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)
-
+  
   // $attrs & $listeners are exposed for easier HOC creation.
   // they need to be reactive so that HOCs using them are always updated
   const parentData = parentVnode && parentVnode.data
@@ -73,6 +73,7 @@ export function renderMixin (Vue: Class<Component>) {
   // 调用render()渲染函数
   Vue.prototype._render = function (): VNode {
     const vm: Component = this
+    // 获取渲染函数
     const { render, _parentVnode } = vm.$options
 
     if (_parentVnode) {

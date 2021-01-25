@@ -8,9 +8,23 @@
 <body>
   <div id="app">
   </div>
-
   <script src="../../dist/vue.js"></script>
   <script>
+
+    Vue.component('anchored-heading', {
+      render: function (createElement) {
+        return createElement(
+          'h' + this.level,   // 标签名称
+          this.$slots.default // 子节点数组
+        )
+      },
+      props: {
+        level: {
+          type: Number,
+          required: true
+        }
+      }
+    })
     const vm = new Vue({
       el: '#app',
       render (h) {
@@ -26,7 +40,7 @@
           this.msg
         )
         console.log(vnode)
-        return null
+        return vnode;
       },
       data: {
         msg: 'Hello Vue'

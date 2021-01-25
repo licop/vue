@@ -193,7 +193,7 @@ export function mountComponent (
       measure(`vue ${name} patch`, startTag, endTag)
     }
   } else {
-    // vm._render()为渲染函数，vm._update把虚拟dom转化为真实dom更新到页面上
+    // vm._render()返回虚拟dom vnode，vm._update把虚拟dom转化为真实dom更新到页面上
     updateComponent = () => {
       vm._update(vm._render(), hydrating)
     }

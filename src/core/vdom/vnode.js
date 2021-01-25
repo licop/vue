@@ -1,5 +1,6 @@
 /* @flow */
 
+// VNode类
 export default class VNode {
   tag: string | void;
   data: VNodeData | void;
@@ -70,14 +71,14 @@ export default class VNode {
     return this.componentInstance
   }
 }
-
+// 空节点
 export const createEmptyVNode = (text: string = '') => {
   const node = new VNode()
   node.text = text
   node.isComment = true
   return node
 }
-
+// 文本节点
 export function createTextVNode (val: string | number) {
   return new VNode(undefined, undefined, undefined, String(val))
 }
