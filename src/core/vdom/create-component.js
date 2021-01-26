@@ -112,6 +112,8 @@ export function createComponent (
   const baseCtor = context.$options._base
 
   // plain options object: turn it into a constructor
+  // 如果不是Ctor不是一个构造函数，是一个对象
+  // 使用Vue.extend()创造一个子组件的构造函数
   if (isObject(Ctor)) {
     Ctor = baseCtor.extend(Ctor)
   }
@@ -151,11 +153,14 @@ export function createComponent (
   resolveConstructorOptions(Ctor)
 
   // transform component v-model data into props & events
+
+  // 处理组件的v-model
   if (isDef(data.model)) {
     transformModel(Ctor.options, data)
   }
 
   // extract props
+  // 提取props
   const propsData = extractPropsFromVNodeData(data, Ctor, tag)
 
   // functional component
@@ -183,10 +188,13 @@ export function createComponent (
   }
 
   // install component management hooks onto the placeholder node
+  // 安装组件的钩子函数 init/pretatch/insert/destory
   installComponentHooks(data)
 
   // return a placeholder vnode
   const name = Ctor.options.name || tag
+  // 创建自定义组件的VNode,设置自定义组件的名字
+  // 记录this.componentOptions = componentOptions
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
     data, undefined, undefined, undefined, context,
