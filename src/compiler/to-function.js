@@ -9,6 +9,7 @@ type CompiledFunctionResult = {
   staticRenderFns: Array<Function>;
 };
 
+// 把字符串形式的代码转换为函数方法
 function createFunction (code, errors) {
   try {
     return new Function(code)
@@ -49,6 +50,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
     }
 
     // check cache
+    // 读取缓存中的CompiledFunctionResult对象结果，如果有直接返回
     const key = options.delimiters
       ? String(options.delimiters) + template
       : template
@@ -57,6 +59,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
     }
 
     // compile
+    // 把模板编译为编译对象(render, staticRenderFns),字符串形式的js代码
     const compiled = compile(template, options)
 
     // check compilation errors/tips
@@ -90,6 +93,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
     // turn code into functions
     const res = {}
     const fnGenErrors = []
+    // 3. 把字符串中的形式的js代码转换成js方法
     res.render = createFunction(compiled.render, fnGenErrors)
     res.staticRenderFns = compiled.staticRenderFns.map(code => {
       return createFunction(code, fnGenErrors)
@@ -108,7 +112,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
         )
       }
     }
-
+    // 4. 缓存并返回(render, staticRenderFns方法)
     return (cache[key] = res)
   }
 }

@@ -30,6 +30,7 @@ export class CodegenState {
     const isReservedTag = options.isReservedTag || no
     this.maybeComponent = (el: ASTElement) => !!el.component || !isReservedTag(el.tag)
     this.onceId = 0
+    // 用来存储静态根节点的代码
     this.staticRenderFns = []
     this.pre = false
   }
@@ -58,6 +59,7 @@ export function genElement (el: ASTElement, state: CodegenState): string {
   }
 
   if (el.staticRoot && !el.staticProcessed) {
+    // 处理静态根节点
     return genStatic(el, state)
   } else if (el.once && !el.onceProcessed) {
     return genOnce(el, state)
@@ -77,9 +79,12 @@ export function genElement (el: ASTElement, state: CodegenState): string {
     } else {
       let data
       if (!el.plain || (el.pre && state.maybeComponent(el))) {
+        // 生成元素的属性/指令/事件
+        // 处理各种指令，包括genDirectives（model，text，html）
+        // 转换成createElement(h 函数)所需要的字符串形式，第二个参数data
         data = genData(el, state)
       }
-
+      // 处理子节点，转换成createElement(h 函数)所需要数组形式，第三个参数children
       const children = el.inlineTemplate ? null : genChildren(el, state, true)
       code = `_c('${el.tag}'${
         data ? `,${data}` : '' // data

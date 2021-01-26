@@ -4,8 +4,14 @@ import { extend } from 'shared/util'
 import { detectErrors } from './error-detector'
 import { createCompileToFunctionFn } from './to-function'
 
+
 export function createCompilerCreator (baseCompile: Function): Function {
+  // baseOptions 平台相关的options
+  // platforms/web/compiler/options.js 中定义
   return function createCompiler (baseOptions: CompilerOptions) {
+    // compile 主要作用将平台相关的options和用户的options合并
+    // 调用baseCompile进行编译
+    // 返回编译的对象
     function compile (
       template: string,
       options?: CompilerOptions

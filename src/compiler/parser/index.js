@@ -200,7 +200,7 @@ export function parse (
       )
     }
   }
-
+  // 对模板的解析
   parseHTML(template, {
     warn,
     expectHTML: options.expectHTML,
@@ -210,6 +210,7 @@ export function parse (
     shouldDecodeNewlinesForHref: options.shouldDecodeNewlinesForHref,
     shouldKeepComment: options.comments,
     outputSourceRange: options.outputSourceRange,
+    // start, end, chars, comment生成AST
     start (tag, attrs, unary, start, end) {
       // check namespace.
       // inherit parent ns if there is one
